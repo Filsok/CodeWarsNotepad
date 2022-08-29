@@ -8,16 +8,9 @@ namespace CodewarsNotepad
     {
         public static string WhoIsWinner(List<string> piecesPositionList)
         {
-            //0-null; 1-Red; 2-Yellow
-            var board = new int[6, 7];
-            string ret = "";
-            ret = MainLogic(piecesPositionList, board, ret);
+            var board = new Winner[6, 7];
+            Winner result=Winner.DRAWOREMPTY;
 
-            return ret;
-        }
-
-        private static string MainLogic(List<string> piecesPositionList, int[,] board, string ret)
-        {
             foreach (var move in from item in piecesPositionList
                                  let move = item.Split('_')
                                  select move)
@@ -25,90 +18,132 @@ namespace CodewarsNotepad
                 var moveColumn = ConvertColumnToNumber(move);
                 Winner moveCoin = CheckCoinColor(move);
 
-                int count = 0;
                 for (int i = 0; i < 6; i++)
                 {
                     if (board[i, moveColumn] == 0)
                     {
-                        board[i, moveColumn] = (int)moveCoin;
+                        board[i, moveColumn] = moveCoin;
+                        if (IsWinner(board, moveColumn, moveCoin, i)) result = moveCoin;
 
-                        //vertical
-                        for (int j = 1; j <= 3; j++)
-                        {
-                            if (i - j >= 0)
-                            {
-                                if (board[i - j, moveColumn] == (int)moveCoin) count++;
-                            }
-                            if (count == 3) ret = ((int)moveCoin == 1) ? "Red" : "Yellow";
-                        }
-                        count = 0;
-                        //horizontal
-                        for (int j = 1; j <= 3; j++)
-                        {
-                            if (0 <= moveColumn - j && moveColumn - j <= 6)
-                            {
-                                if (board[i, moveColumn - j] == (int)moveCoin) count++;
-                                else break;
-                            }
-                        }
-                        for (int j = 1; j <= 3; j++)
-                        {
-                            if (0 <= moveColumn + j && moveColumn + j <= 6)
-                            {
-                                if (board[i, moveColumn + j] == (int)moveCoin) count++;
-                                else break;
-                            }
-                        }
-                        if (count >= 3) ret = ((int)moveCoin == 1) ? "Red" : "Yellow";
-                        count = 0;
-                        //diagonal /
-                        for (int j = 1; j <= 3; j++)
-                        {
-                            if (0 <= moveColumn - j && moveColumn - j <= 6 && 0 <= i - j && i - j <= 5)
-                            {
-                                if (board[i - j, moveColumn - j] == (int)moveCoin) count++;
-                                else break;
-                            }
-                        }
-                        for (int j = 1; j <= 3; j++)
-                        {
-                            if (0 <= moveColumn + j && moveColumn + j <= 6 && 0 <= i + j && i + j <= 5)
-                            {
-                                if (board[i + j, moveColumn + j] == (int)moveCoin) count++;
-                                else break;
-                            }
-                        }
-                        if (count >= 3) ret = ((int)moveCoin == 1) ? "Red" : "Yellow";
-                        count = 0;
-                        //diagonal \
-                        for (int j = 1; j <= 3; j++)
-                        {
-                            if (0 <= moveColumn - j && moveColumn - j <= 6 && 0 <= i + j && i + j <= 5)
-                            {
-                                if (board[i + j, moveColumn - j] == (int)moveCoin) count++;
-                                else break;
-                            }
-                        }
-                        for (int j = 1; j <= 3; j++)
-                        {
-                            if (0 <= moveColumn + j && moveColumn + j <= 6 && 0 <= i - j && i - j <= 5)
-                            {
-                                if (board[i - j, moveColumn + j] == (int)moveCoin) count++;
-                                else break;
-                            }
-                        }
-                        if (count >= 3) ret = ((int)moveCoin == 1) ? "Red" : "Yellow";
                         break;
                     }
                 }
 
-                if (!String.IsNullOrEmpty(ret)) break;
-
-                if (String.IsNullOrEmpty(ret)) ret = "Draw";
-
+                if (result==Winner.RED||result==Winner.YELLOW) break;
             }
 
+            return ResultToString(result);
+        }
+
+        private static string ResultToString(Winner result)
+        {
+            string ret;
+            switch (result)
+            {
+                case Winner.DRAWOREMPTY:
+                    ret = "Draw";
+                    break;
+                case Winner.RED:
+                    ret = "Red";
+                    break;
+                case Winner.YELLOW:
+                    ret = "Yellow";
+                    break;
+                default:
+                    ret = "Something went wrong";
+                    break;
+            }
             return ret;
+        }
+
+        private static bool IsWinner(Winner[,] board, int moveColumn, Winner moveCoin, int i)
+        {
+            if (IsWinnerVertical(board, moveColumn, moveCoin, i)) return true;
+            if (IsWinnerHorizontal(board, moveColumn, moveCoin, i)) return true;
+            if (IsWinnerDiagonal(board, moveColumn, moveCoin, i)) return true;
+            return false;
+        }
+
+        private static bool IsWinnerDiagonal(Winner[,] board, int moveColumn, Winner moveCoin, int i)
+        {
+            //diagonal /
+            int count = 0;
+            for (int j = 1; j <= 3; j++)
+            {
+                if (0 <= moveColumn - j && moveColumn - j <= 6 && 0 <= i - j && i - j <= 5)
+                {
+                    if (board[i - j, moveColumn - j] == moveCoin) count++;
+                    else break;
+                }
+            }
+            for (int j = 1; j <= 3; j++)
+            {
+                if (0 <= moveColumn + j && moveColumn + j <= 6 && 0 <= i + j && i + j <= 5)
+                {
+                    if (board[i + j, moveColumn + j] == moveCoin) count++;
+                    else break;
+                }
+            }
+            if (count >= 3) return true;
+
+            //diagonal \
+            count = 0;
+            for (int j = 1; j <= 3; j++)
+            {
+                if (0 <= moveColumn - j && moveColumn - j <= 6 && 0 <= i + j && i + j <= 5)
+                {
+                    if (board[i + j, moveColumn - j] == moveCoin) count++;
+                    else break;
+                }
+            }
+            for (int j = 1; j <= 3; j++)
+            {
+                if (0 <= moveColumn + j && moveColumn + j <= 6 && 0 <= i - j && i - j <= 5)
+                {
+                    if (board[i - j, moveColumn + j] == moveCoin) count++;
+                    else break;
+                }
+            }
+            if (count >= 3) return true;
+            return false;
+        }
+
+        private static bool IsWinnerHorizontal(Winner[,] board, int moveColumn, Winner moveCoin, int i)
+        {
+            int count = 0;
+            for (int j = 1; j <= 3; j++)
+            {
+                if (0 <= moveColumn - j && moveColumn - j <= 6)
+                {
+                    if (board[i, moveColumn - j] == moveCoin) count++;
+                    else break;
+                }
+            }
+            for (int j = 1; j <= 3; j++)
+            {
+                if (0 <= moveColumn + j && moveColumn + j <= 6)
+                {
+                    if (board[i, moveColumn + j] == moveCoin) count++;
+                    else break;
+                }
+            }
+            if (count >= 3) return true;
+            return false;
+        }
+
+        private static bool IsWinnerVertical(Winner[,] board, int moveColumn, Winner moveCoin, int i)
+        {
+            int count = 0;
+            for (int j = 1; j <= 3; j++)
+            {
+                if (i - j >= 0)
+                {
+                    if (board[i - j, moveColumn] == moveCoin) count++;
+                }
+                if (count == 3)
+                    return true;
+            }
+            return false;
         }
 
         private static Winner CheckCoinColor(string[] move)
@@ -116,10 +151,10 @@ namespace CodewarsNotepad
             switch (move[1])
             {
                 case "Red": return Winner.RED;
-                case "Yellow": return Winner.RED;
+                case "Yellow": return Winner.YELLOW;
             }
 
-            return Winner.DRAW;
+            return Winner.DRAWOREMPTY;
         }
 
         private static int ConvertColumnToNumber(string[] move)
@@ -142,7 +177,7 @@ namespace CodewarsNotepad
 
         private enum Winner
         {
-            DRAW,
+            DRAWOREMPTY,
             RED,
             YELLOW
         }
